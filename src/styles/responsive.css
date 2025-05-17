@@ -1,0 +1,135 @@
+/* Responsive Styles */
+:root {
+  --primary: #2C7A7B; /* Teal */
+  --primary-dark: #234E52;
+  --primary-light: #4FD1C5;
+  --accent: #F56565; /* Coral */
+  --accent-dark: #C53030;
+  --neutral: #2D3748; /* Dark gray */
+  --neutral-light: #A0AEC0;
+  --background: #F7FAFC;
+  --white: #FFFFFF;
+  --shadow-sm: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --radius: 12px;
+  --transition: all 0.2s ease;
+  --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+@media screen and (min-width: 768px) {
+    .app-bar {
+      padding: 16px 32px;
+    }
+  
+    .app-bar__brand h1 {
+      font-size: 1.8em;
+      color: var(--primary-color);
+    }
+  
+    .app-bar__menu {
+      display: none;
+    }
+  
+    .app-bar__navigation {
+      position: static;
+      width: auto;
+      height: auto;
+      background-color: transparent;
+      box-shadow: none;
+      padding: 0;
+    }
+  
+    .app-bar__navigation ul {
+      display: flex;
+      gap: 24px;
+    }
+  
+    .app-bar__navigation li {
+      margin-bottom: 0;
+    }
+  
+    .app-bar__navigation a {
+      color: var(--primary);
+      padding: 8px 12px;
+    }
+  
+    .app-bar__navigation a:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+  
+    main {
+      padding: 32px;
+    }
+  
+    .stories {
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    }
+  
+    .stories-map {
+      height: 500px;
+    }
+  
+    .story-detail {
+      padding: 32px;
+    }
+  
+    .story-detail__map {
+      height: 500px;
+    }
+  
+    .add-story {
+      padding: 32px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+  
+    .add-story__map {
+      height: 400px;
+    }
+  
+    .about {
+      padding: 32px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+  }
+  
+  @media screen and (min-width: 1024px) {
+    .app-bar__brand h1 {
+      font-size: 2em;
+      color: var(--primary-color);
+    }
+  
+    .stories {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  
+    .content__heading {
+      font-size: 2.5em;
+      color: var(--primary-color);
+    }
+  }
+  
+  @media screen and (max-width: 767px) {
+    .app-bar__navigation {
+      transform: translateX(-250px);
+    }
+  
+    .app-bar__navigation.open {
+      transform: translateX(0);
+    }
+  }
+  
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+    
+    ::view-transition-old(page-transition),
+    ::view-transition-new(page-transition) {
+      animation: none !important;
+    }
+  }
