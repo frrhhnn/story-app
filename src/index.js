@@ -15,12 +15,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     content: document.querySelector('main'),
   });
 
-  // Initialize PWA installer
-  PWAInstaller.init({
-    installButton: document.getElementById('installButton'),
-    closeInstallPrompt: document.getElementById('closeInstallPrompt'),
-    installPrompt: document.getElementById('installPrompt'),
-  });
+  // Initialize PWA installer with required elements
+  PWAInstaller.init();
 
   window.addEventListener('hashchange', () => {
     app.renderPage();
@@ -28,8 +24,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   window.addEventListener('load', () => {
     app.renderPage();
+    // Register service worker after page load
+    swRegister();
   });
-
-  // Register service worker
-  await swRegister();
 });

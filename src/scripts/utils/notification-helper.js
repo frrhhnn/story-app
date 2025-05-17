@@ -18,57 +18,92 @@ const NotificationHelper = {
 
   async requestPermission() {
     if (!this.isSupportedBrowser()) {
+      showResponseMessage('Browser Anda tidak mendukung notifikasi');
       return false;
     }
 
-    const result = await Notification.requestPermission();
-    if (result === 'denied') {
-      console.log('Notification permission denied');
+    try {
+      const result = await Notification.requestPermission();
+      if (result === 'denied') {
+        console.log('Notification permission denied');
+        showResponseMessage('Izin notifikasi ditolak oleh browser');
+        return false;
+      }
+      if (result === 'default') {
+        console.log('Notification permission dismissed');
+        showResponseMessage('Izin notifikasi belum diberikan');
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.error('Error requesting notification permission:', error);
+      showResponseMessage('Gagal meminta izin notifikasi');
       return false;
     }
-    if (result === 'default') {
-      console.log('Notification permission dismissed');
-      return false;
+  },
+
+  async registerServiceWorker() {
+    if (!this.isSupportedBrowser()) {
+      return null;
     }
-    return true;
+
+    try {
+      // Use relative path for service worker
+      const swPath = './sw.js';
+      const registration = await navigator.serviceWorker.register(swPath, {
+        scope: './'
+      });
+      console.log('Service Worker registered successfully');
+      return registration;
+    } catch (error) {
+      console.error('Service Worker registration failed:', error);
+      showResponseMessage('Gagal mendaftarkan service worker: ' + error.message);
+      return null;
+    }
   },
 
   async toggleNotification() {
     try {
       console.log('Starting notification toggle...');
       
-      // Cek apakah browser mendukung
+      // Check browser support
       if (!this.isSupportedBrowser()) {
-        console.log('Browser tidak mendukung notifikasi');
         showResponseMessage('Browser tidak mendukung notifikasi');
         return { success: false, message: 'Browser tidak mendukung notifikasi' };
       }
 
-      // Cek status permission saat ini
+      // Check current permission status
       if (Notification.permission === 'denied') {
-        console.log('Notifikasi telah diblokir oleh browser');
         showResponseMessage('Notifikasi telah diblokir oleh browser. Harap izinkan notifikasi di pengaturan browser.');
         return { success: false, message: 'Notifikasi telah diblokir oleh browser' };
       }
 
-      // Dapatkan service worker registration
-      const registration = await navigator.serviceWorker.ready;
+      // Get service worker registration
+      let registration = await navigator.serviceWorker.ready;
+      if (!registration) {
+        registration = await this.registerServiceWorker();
+        if (!registration) {
+          return { success: false, message: 'Gagal mendaftarkan service worker' };
+        }
+      }
+      
       console.log('Service Worker ready for notification toggle');
       
-      // Cek status subscription
+      // Check subscription status
       const subscription = await registration.pushManager.getSubscription();
-      
+      console.log('Current subscription:', subscription);
+
       if (subscription) {
-        // Unsubscribe jika sudah subscribe
+        // Unsubscribe if already subscribed
         try {
           console.log('Attempting to unsubscribe...');
           
-          // Unsubscribe dari server terlebih dahulu
+          // Unsubscribe from server first
           const unsubResult = await AuthAPI.unsubscribePushNotification(subscription);
           console.log('Server unsubscribe result:', unsubResult);
           
           if (!unsubResult.error) {
-            // Kemudian unsubscribe di browser
+            // Then unsubscribe in browser
             await subscription.unsubscribe();
             console.log('Successfully unsubscribed from browser');
             
@@ -79,16 +114,16 @@ const NotificationHelper = {
           }
         } catch (error) {
           console.error('Failed to unsubscribe:', error);
-          showResponseMessage('Gagal menonaktifkan notifikasi');
+          showResponseMessage('Gagal menonaktifkan notifikasi: ' + error.message);
           return { success: false, message: 'Gagal menonaktifkan notifikasi' };
         }
       }
 
-      // Subscribe jika belum subscribe
+      // Subscribe if not yet subscribed
       try {
         console.log('Attempting to subscribe...');
         
-        // Minta izin jika belum ada
+        // Request permission if not granted
         if (Notification.permission === 'default') {
           console.log('Requesting notification permission...');
           const permission = await Notification.requestPermission();
@@ -100,11 +135,11 @@ const NotificationHelper = {
           }
         }
 
-        // Pastikan VAPID key valid
+        // Ensure VAPID key is valid
         const applicationServerKey = this.urlBase64ToUint8Array(CONFIG.PUSH_MSG_VAPID_PUBLIC_KEY);
         console.log('Application Server Key:', applicationServerKey);
 
-        // Subscribe ke push manager
+        // Subscribe to push manager
         console.log('Subscribing to push manager...');
         const pushSubscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,
@@ -112,18 +147,18 @@ const NotificationHelper = {
         });
         console.log('Push subscription created:', pushSubscription);
         
-        // Kirim subscription ke server
+        // Send subscription to server
         const subResult = await AuthAPI.subscribePushNotification(pushSubscription);
         console.log('Server subscription result:', subResult);
         
         if (!subResult.error) {
           showResponseMessage('Notifikasi berhasil diaktifkan');
           
-          // Tampilkan notifikasi browser saat berhasil mengaktifkan
+          // Show browser notification on successful activation
           await registration.showNotification('StoryApp Notification', {
             body: 'Notifikasi berhasil diaktifkan! 🎉 Anda akan menerima pemberitahuan ketika ada story baru.',
-            icon: '/favicon.png',
-            badge: '/favicon.png',
+            icon: './favicon.png',
+            badge: './favicon.png',
             vibrate: [100, 50, 100],
             tag: 'subscription-success',
             data: {
@@ -141,7 +176,7 @@ const NotificationHelper = {
           
           return { success: true, subscribed: true };
         } else {
-          // Jika gagal di server, unsubscribe dari browser
+          // If server fails, unsubscribe from browser
           await pushSubscription.unsubscribe();
           throw new Error(subResult.message);
         }
@@ -154,21 +189,6 @@ const NotificationHelper = {
       console.error('Error in toggleNotification:', error);
       showResponseMessage('Terjadi kesalahan saat mengatur notifikasi');
       return { success: false, message: 'Terjadi kesalahan saat mengatur notifikasi' };
-    }
-  },
-
-  async registerServiceWorker() {
-    if (!this.isSupportedBrowser()) {
-      return null;
-    }
-
-    try {
-      const registration = await navigator.serviceWorker.register('/sw.js');
-      console.log('Service Worker registered successfully');
-      return registration;
-    } catch (error) {
-      console.error('Registrasi service worker gagal:', error);
-      return null;
     }
   },
 

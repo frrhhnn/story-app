@@ -72,8 +72,9 @@ class App {
       if (!response.error && response.data?.stories) {
         console.log('New stories available:', response.data.stories.length);
         
-        // Trigger page re-render after sync only if necessary
-        if (this._isInitialized && window.location.hash.includes('/home')) {
+        // Only re-render if we're on the home page
+        const currentUrl = window.location.hash.slice(1);
+        if (this._isInitialized && (currentUrl === '' || currentUrl === '/home')) {
           await this.renderPage();
         }
       } else {
@@ -143,8 +144,8 @@ class App {
           let registration = await navigator.serviceWorker.getRegistration();
           
           if (!registration) {
-            registration = await navigator.serviceWorker.register('/sw.js', {
-              scope: '/'
+            registration = await navigator.serviceWorker.register('./sw.js', {
+              scope: './'
             });
             console.log('Service Worker registered:', registration);
           } else {
@@ -181,7 +182,7 @@ class App {
           }
         } catch (error) {
           console.error('Service Worker registration failed:', error);
-          showResponseMessage('Gagal menginisialisasi notifikasi: Layanan tidak tersedia');
+          showResponseMessage('Gagal menginisialisasi notifikasi: ' + error.message);
           return;
         }
       } else {
@@ -190,7 +191,7 @@ class App {
       }
     } catch (error) {
       console.error('Error initializing push notification:', error);
-      showResponseMessage('Gagal menginisialisasi notifikasi: Silakan coba lagi nanti');
+      showResponseMessage('Gagal menginisialisasi notifikasi: ' + error.message);
     }
   }
 
@@ -352,7 +353,7 @@ class App {
 
   // Menentukan rute mana yang hanya untuk pengguna yang belum login
   _isAuthPage(url) {
-    const authPages = ['/login', '/register', '/about'];
+    const authPages = ['/login', '/register'];
     return authPages.includes(url);
   }
 
