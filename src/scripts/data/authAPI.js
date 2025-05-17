@@ -87,11 +87,22 @@ class AuthAPI {
 
   // Subscribe to push notifications
   async subscribePushNotification(subscription) {
-    const token = this.getToken();
-    if (!token) return { error: true, message: 'Unauthorized' };
-
     try {
-      const response = await fetch(`${CONFIG.BASE_URL}${CONFIG.PUSH_MSG_SUBSCRIBE_URL}`, {
+      if (!subscription || !subscription.endpoint) {
+        throw new Error('Invalid subscription object');
+      }
+
+      console.log('Sending subscription to server:', subscription);
+      
+      // Get subscription keys
+      const subscriptionJson = subscription.toJSON();
+      console.log('Subscription JSON:', subscriptionJson);
+
+      const token = this.getToken();
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+      const response = await fetch(`${this.baseUrl}${CONFIG.PUSH_MSG_SUBSCRIBE_URL}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -100,50 +111,107 @@ class AuthAPI {
         body: JSON.stringify({
           endpoint: subscription.endpoint,
           keys: {
-            p256dh: subscription.getKey('p256dh') ? 
-              btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('p256dh')))) : '',
-            auth: subscription.getKey('auth') ?
-              btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('auth')))) : '',
-          },
-        }),
+            p256dh: subscriptionJson.keys.p256dh,
+            auth: subscriptionJson.keys.auth
+          }
+        })
       });
 
       const responseJson = await response.json();
-      return responseJson;
+      console.log('Server subscription response:', responseJson);
+
+      if (!responseJson.error) {
+        console.log('Successfully subscribed on server');
+        
+        // Save subscription status locally
+        localStorage.setItem('notificationSubscribed', 'true');
+        return responseJson;
+      } else {
+        console.error('Server subscription failed:', responseJson.message);
+        throw new Error(responseJson.message || 'Server subscription failed');
+      }
     } catch (error) {
-      console.error('Error subscribing to push:', error);
-      return {
-        error: true,
-        message: error.message || 'Failed to subscribe to push notification',
+      console.error('Error subscribing to push notification:', error);
+      return { 
+        error: true, 
+        message: error.message || 'Failed to subscribe to push notifications' 
       };
     }
   }
 
   // Unsubscribe from push notifications
   async unsubscribePushNotification(subscription) {
-    const token = this.getToken();
-    if (!token) return { error: true, message: 'Unauthorized' };
-
     try {
-      const response = await fetch(`${CONFIG.BASE_URL}${CONFIG.PUSH_MSG_UNSUBSCRIBE_URL}`, {
+      if (!subscription || !subscription.endpoint) {
+        throw new Error('Invalid subscription object');
+      }
+
+      console.log('Sending unsubscription to server for endpoint:', subscription.endpoint);
+      
+      const token = this.getToken();
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+
+      const response = await fetch(`${this.baseUrl}${CONFIG.PUSH_MSG_UNSUBSCRIBE_URL}`, {
         method: 'DELETE',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          endpoint: subscription.endpoint,
-        }),
+          endpoint: subscription.endpoint
+        })
       });
 
       const responseJson = await response.json();
+      console.log('Server unsubscribe response:', responseJson);
+
+      if (!responseJson.error) {
+        console.log('Successfully unsubscribed from server');
+        await this.notifyUnsubscription();
+        
+        // Remove subscription status locally
+        localStorage.removeItem('notificationSubscribed');
+      } else {
+        console.error('Server unsubscription failed:', responseJson.message);
+        throw new Error(responseJson.message || 'Server unsubscription failed');
+      }
+
       return responseJson;
     } catch (error) {
-      console.error('Error unsubscribing from push:', error);
-      return {
-        error: true,
-        message: error.message || 'Failed to unsubscribe from push notification',
+      console.error('Error unsubscribing from push notification:', error);
+      return { 
+        error: true, 
+        message: error.message || 'Failed to unsubscribe from push notifications' 
       };
+    }
+  }
+
+  // Check if notifications are subscribed
+  async isSubscribed() {
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      if (!registration.pushManager) {
+        return false;
+      }
+
+      const subscription = await registration.pushManager.getSubscription();
+      if (!subscription) {
+        localStorage.removeItem('notificationSubscribed');
+        return false;
+      }
+
+      // If we have a subscription but no local storage flag, assume we're subscribed
+      // This helps with page refreshes where localStorage might get cleared
+      if (!localStorage.getItem('notificationSubscribed')) {
+        localStorage.setItem('notificationSubscribed', 'true');
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error checking subscription status:', error);
+      return false;
     }
   }
 }

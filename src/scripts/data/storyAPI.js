@@ -158,7 +158,7 @@ class StoryAPI {
   async getStoryDetail(id) {
     try {
       console.log('Getting story detail for ID:', id);
-   
+      
       // Try to get from IndexedDB first
       const story = await StoryIdb.getStory(id);
       if (story) {
@@ -447,7 +447,7 @@ class StoryAPI {
     try {
       // Only delete from IndexedDB since API doesn't support story deletion
       const success = await StoryIdb.deleteStory(id);
-      
+
       if (success) {
         return {
           error: false,

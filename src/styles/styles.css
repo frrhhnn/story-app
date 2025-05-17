@@ -998,17 +998,15 @@ footer {
 /* Install Prompt */
 .install-prompt {
   position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: #FFF3CD;
-  padding: 24px;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-md);
-  z-index: 1000;
-  max-width: 400px;
-  width: 90%;
-  border: 1px solid #FFD700;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 9999;
   opacity: 1;
   transition: opacity 0.3s ease;
 }
@@ -1016,65 +1014,101 @@ footer {
 .install-prompt.hidden {
   opacity: 0;
   pointer-events: none;
+  visibility: hidden;
 }
 
-.install-prompt::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: -1;
+.install-prompt__container {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  padding: 24px 32px;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(44, 122, 123, 0.3);
+  max-width: 420px;
+  width: 90%;
+  border: 1px solid rgba(44, 122, 123, 0.5);
+  animation: fadeInSlide 0.5s ease forwards;
+  position: relative;
+}
+
+@keyframes fadeInSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .install-prompt__content {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 16px;
-  margin-bottom: 16px;
+  margin-bottom: 24px;
+  position: relative;
 }
 
 .install-prompt__content::before {
-  content: '\26A0';
-  font-size: 1.5rem;
-  color: #D97706;
+  content: '\f05a';
+  font-family: 'Font Awesome 6 Free';
+  font-weight: 900;
+  font-size: 1.8rem;
+  color: var(--primary);
+  background: rgba(44, 122, 123, 0.1);
+  border-radius: 50%;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: -4px;
 }
 
 .install-prompt__content p {
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-weight: 500;
-  color: #92400E;
-  margin-bottom: 0;
+  color: var(--neutral-700);
+  line-height: 1.6;
+  margin: 0;
 }
 
 .install-prompt__buttons {
   display: flex;
-  gap: 12px;
+  gap: 16px;
   justify-content: center;
+  flex-wrap: wrap;
+}
+
+.install-prompt__buttons .btn {
+  cursor: pointer;
+  padding: 12px 28px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .install-prompt__buttons .btn-primary {
-  background: #D97706;
+  background: linear-gradient(90deg, var(--primary) 0%, var(--primary-dark) 100%);
   color: var(--white);
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  box-shadow: 0 4px 15px rgba(44, 122, 123, 0.4);
 }
 
 .install-prompt__buttons .btn-primary:hover {
-  background: #B45309;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(44, 122, 123, 0.5);
+  background: linear-gradient(90deg, var(--primary-dark) 0%, var(--primary) 100%);
 }
 
 .install-prompt__buttons .btn-secondary {
-  background: var(--neutral-light);
-  color: var(--neutral);
+  background: var(--neutral-200);
+  color: var(--neutral-700);
 }
 
 .install-prompt__buttons .btn-secondary:hover {
-  background: var(--neutral);
-  color: var(--white);
+  background: var(--neutral-300);
+  transform: translateY(-3px);
+  color: var(--neutral-900);
 }
 
 /* Offline Indicator */

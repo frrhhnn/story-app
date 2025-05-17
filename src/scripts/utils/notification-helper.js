@@ -23,14 +23,14 @@ const NotificationHelper = {
     }
 
     try {
-      const result = await Notification.requestPermission();
-      if (result === 'denied') {
-        console.log('Notification permission denied');
+    const result = await Notification.requestPermission();
+    if (result === 'denied') {
+      console.log('Notification permission denied');
         showResponseMessage('Izin notifikasi ditolak oleh browser');
-        return false;
-      }
-      if (result === 'default') {
-        console.log('Notification permission dismissed');
+      return false;
+    }
+    if (result === 'default') {
+      console.log('Notification permission dismissed');
         showResponseMessage('Izin notifikasi belum diberikan');
         return false;
       }
@@ -92,26 +92,43 @@ const NotificationHelper = {
       // Check subscription status
       const subscription = await registration.pushManager.getSubscription();
       console.log('Current subscription:', subscription);
-
+      
       if (subscription) {
         // Unsubscribe if already subscribed
         try {
           console.log('Attempting to unsubscribe...');
           
-          // Unsubscribe from server first
+          // Unsubscribe from browser first
+          await subscription.unsubscribe();
+          console.log('Successfully unsubscribed from browser');
+          
+          // Then unsubscribe from server
           const unsubResult = await AuthAPI.unsubscribePushNotification(subscription);
           console.log('Server unsubscribe result:', unsubResult);
           
-          if (!unsubResult.error) {
-            // Then unsubscribe in browser
-            await subscription.unsubscribe();
-            console.log('Successfully unsubscribed from browser');
-            
-            showResponseMessage('Notifikasi berhasil dinonaktifkan');
-            return { success: true, subscribed: false };
-          } else {
-            throw new Error(unsubResult.message);
-          }
+          // Show browser notification for unsubscribe
+          await registration.showNotification('StoryApp Notification', {
+            body: 'Notifikasi berhasil dinonaktifkan. Anda tidak akan menerima pemberitahuan lagi.',
+            icon: './favicon.png',
+            badge: './favicon.png',
+            vibrate: [100, 50, 100],
+            tag: 'unsubscription-notification',
+            data: {
+              dateOfArrival: Date.now(),
+              url: window.location.origin,
+              type: 'unsubscription-notification'
+            },
+            actions: [
+              {
+                action: 'ok',
+                title: 'OK'
+              }
+            ]
+          });
+          
+          // Show toast message
+          showResponseMessage('Notifikasi berhasil dinonaktifkan');
+          return { success: true, subscribed: false };
         } catch (error) {
           console.error('Failed to unsubscribe:', error);
           showResponseMessage('Gagal menonaktifkan notifikasi: ' + error.message);
@@ -263,17 +280,17 @@ const NotificationHelper = {
   // Convert VAPID key from base64 to Uint8Array
   urlBase64ToUint8Array(base64String) {
     const padding = '='.repeat((4 - base64String.length % 4) % 4);
-    const base64 = (base64String + padding)
+      const base64 = (base64String + padding)
       .replace(/\-/g, '+')
-      .replace(/_/g, '/');
+        .replace(/_/g, '/');
 
-    const rawData = window.atob(base64);
-    const outputArray = new Uint8Array(rawData.length);
+      const rawData = window.atob(base64);
+      const outputArray = new Uint8Array(rawData.length);
 
-    for (let i = 0; i < rawData.length; ++i) {
-      outputArray[i] = rawData.charCodeAt(i);
-    }
-    return outputArray;
+      for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+      }
+      return outputArray;
   },
 };
 

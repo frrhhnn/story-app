@@ -77,15 +77,13 @@ const PWAInstaller = {
       // Wait for user response
       const { outcome } = await this._deferredPrompt.userChoice;
       console.log(`User response to the install prompt: ${outcome}`);
-      
-      // Clear the deferredPrompt
-      this._deferredPrompt = null;
-      
-      // Hide our custom prompt
-      this._hideInstallPromotion();
     } catch (error) {
       console.error('Error during installation:', error);
       showResponseMessage('Gagal memasang aplikasi: ' + error.message);
+    } finally {
+      // Always clear the deferredPrompt and hide our custom prompt
+      this._deferredPrompt = null;
+      this._hideInstallPromotion();
     }
   },
 
