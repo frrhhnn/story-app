@@ -31,6 +31,8 @@ const PWAInstaller = {
     if (this._closeInstallPrompt) {
       this._closeInstallPrompt.addEventListener('click', () => {
         this._hideInstallPromotion();
+        // Clear the deferred prompt when user clicks "Nanti"
+        this._deferredPrompt = null;
       });
     }
 
